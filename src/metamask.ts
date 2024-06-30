@@ -175,6 +175,10 @@ export class MetaStellarWallet{
         return await this.makeRPCRequest("showAddress", {});
     }
 
+    async fund(){
+        return await this.makeRPCRequest("fund", {});
+    }
+
 
     exportState():WalletState{
         return this.State;
