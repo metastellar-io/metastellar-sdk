@@ -1,6 +1,6 @@
 {
   "name": "metastellar-sdk",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "npm": "@metastellar/metastellar-sdk",
   "repository": {
@@ -8,12 +8,12 @@
     "url": "https://github.com/metastellar-io/metastellar-sdk.git"
   },
   "files": ["dist"],
-  "main": "./dist/my-lib.umd.cjs",
-  "module": "./dist/my-lib.js",
+  "main": "./dist/metastellar-sdk.umd.cjs",
+  "module": "./dist/metastellar-sdk.js",
   "exports": {
     ".": {
-      "import": "./dist/my-lib.js",
-      "require": "./dist/my-lib.umd.cjs"
+      "import": "./dist/metastellar-sdk.js",
+      "require": "./dist/metastellar-sdk.umd.cjs"
     }
   },
   "scripts": {
