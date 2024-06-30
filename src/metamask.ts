@@ -180,8 +180,8 @@ export class MetaStellarWallet{
         return this.State;
     }
 
-    static importState(state:WalletState):MetamaskWallet{
-        let wallet = new MetamaskWallet(state.snapId, state.network);
+    static loadFromState(state:WalletState):MetaStellarWallet{
+        let wallet = new MetaStellarWallet(state.snapId, state.network);
         wallet.State = state;
         return wallet;
     }
