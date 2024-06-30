@@ -1,6 +1,6 @@
 
 export type * from "./types.js";
-export {MetamaskWallet} from "./metamask.js";
+import {MetamaskWallet} from "./metamask.js";
 import { MetaMaskInpageProvider } from "@metamask/providers";
 
 declare global {
@@ -8,3 +8,5 @@ declare global {
     ethereum?:MetaMaskInpageProvider
   }
 }
+
+module.exports = {"metastellarWallet":MetamaskWallet};
