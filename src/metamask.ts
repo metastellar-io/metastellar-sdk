@@ -13,7 +13,7 @@ declare global {
 
 
 
-export class MetamaskWallet{
+export class MetaStellarWallet{
     State:WalletState;
 
     constructor(snapId?:string, network?:'mainnet'|'testnet'){
