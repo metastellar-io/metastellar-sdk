@@ -282,3 +282,16 @@ export interface DataPacket{
   testnetXLMBalance: string,
   fedName: string | null
 }
+
+export interface WalletState{
+  snapId:string;
+  connected:boolean;// = false;
+  loading:boolean;// = false;
+  address:string;// = "";
+  assets:any;// = [];
+  network:'mainnet'|'testnet';// = "mainnet";
+  dataPacket:DataPacket|null;// = null;
+  name:string;// = "";
+  fedName:string;// = "";
+
+}

@@ -1,7 +1,7 @@
 
 
 
-import type { DataPacket } from "./types.js";
+import type { DataPacket, WalletState} from "./types.js";
 import * as StellarSDK from "@stellar/stellar-sdk";
 import { MetaMaskInpageProvider } from "@metamask/providers";
 declare global {
@@ -10,34 +10,43 @@ declare global {
     }
   }
 
-export class MetamaskWallet{
-    snapId:string;
-    connected:boolean = false;
-    loading:boolean = false;
-    address:string = "";
-    assets:any = [];
-    network:'mainnet'|'testnet' = "mainnet";
-    dataPacket:DataPacket|null = null;
-    name:string = "";
-    fedName:string = "";
 
-    constructor(snapId:string, network?:'mainnet'|'testnet'){
-        if(network){
-            this.network = network;
+
+
+export class MetamaskWallet{
+    State:WalletState;
+
+    constructor(snapId?:string, network?:'mainnet'|'testnet'){
+        if(!snapId){
+            snapId = "npm:stellar-snap";
         }
-        this.snapId = snapId;
+        this.State = {
+            snapId: snapId,
+            connected: false,
+            loading: false,
+            address: "",
+            assets: [],
+            network: "mainnet",
+            dataPacket: null,
+            name: "",
+            fedName: ""
+        }
+        if(network){
+            this.State.network = network;
+        }
+        this.State.snapId = snapId;
         
     }
 
     isLoading():boolean{
-        return this.loading;
+        return this.State.loading;
     }
 
     async init(){
         try{
-            if(!this.connected){
+            if(!this.State.connected){
                 if(window.ethereum !== undefined){
-                    this.connected = await window.ethereum.request({
+                    this.State.connected = await window.ethereum.request({
                         method: 'wallet_requestSnaps',
                         params: {
                         [`npm:stellar-snap`]: {}
@@ -49,10 +58,10 @@ export class MetamaskWallet{
                 }
             }
             
-            this.dataPacket = await this.getDataPacket();
-            this.address = this.dataPacket.currentAddress;
-            this.name = this.dataPacket.name || "Unknown";
-            this.fedName = this.dataPacket.fedName || "Unknown";
+            this.State.dataPacket = await this.getDataPacket();
+            this.State.address = this.State.dataPacket.currentAddress;
+            this.State.name = this.State.dataPacket.name || "Unknown";
+            this.State.fedName = this.State.dataPacket.fedName || "Unknown";
             return this;
         }
         catch(e){
@@ -62,19 +71,19 @@ export class MetamaskWallet{
     }
     async makeRPCRequest(method:string, params:any){
         try{
-            if(!this.connected){
+            if(!this.State.connected){
                 await this.init();
             }
             const request = {
                 method: 'wallet_invokeSnap',
-                params: {snapId: this.snapId, 
+                params: {snapId: this.State.snapId, 
                 request:{
                     method: `${method}`,
                     params: params
                 }
                 }
             }
-            this.loading = true;
+            this.State.loading = true;
             let response = null;
             if(window.ethereum !== undefined){
                 response = await window.ethereum.request(request);
@@ -82,7 +91,7 @@ export class MetamaskWallet{
             else{
                 throw new Error("Metamask is not available or is not installed");
             }
-            this.loading = false;
+            this.State.loading = false;
             return response;
         }
         catch(e){
@@ -92,34 +101,40 @@ export class MetamaskWallet{
         
     }
     async getDataPacket():Promise<DataPacket>{
-        if(this.connected && this.dataPacket){
-            return this.dataPacket;
+        if(this.State.connected && this.State.dataPacket){
+            return this.State.dataPacket;
         }
         else{
-            return await this.makeRPCRequest("getDataPacket", {}) as DataPacket;
+            let newDataPacket = await this.makeRPCRequest("getDataPacket", {}) as DataPacket;
+            this.State.dataPacket = newDataPacket;
         }
+        return this.State.dataPacket;
     }
 
-    async syncAccount():Promise<MetamaskWallet>{
+    async syncAccount():Promise<WalletState>{
         return await this.syncAccount();
+        return this.State;
     }
+
+ 
+
 
     async signTransaction(transaction:StellarSDK.Transaction):Promise<any>{
         const stringTxn = transaction.toEnvelope().toXDR();
-        return await this.makeRPCRequest("signTransaction", {transaction: stringTxn, testnet: (this.network === "testnet")});
+        return await this.makeRPCRequest("signTransaction", {transaction: stringTxn, testnet: (this.State.network === "testnet")});
     }
 
     async signAndSubmitTransaction(transaction:StellarSDK.Transaction):Promise<string>{
         const stringTxn = transaction.toEnvelope().toXDR();
-        return await this.makeRPCRequest("signAndSubmitTransaction", {transaction: stringTxn, testnet: (this.network === "testnet")}) as string;
+        return await this.makeRPCRequest("signAndSubmitTransaction", {transaction: stringTxn, testnet: (this.State.network === "testnet")}) as string;
     }
 
     async getBalance(){
-        return await this.makeRPCRequest("getBalance", {testnet: (this.network === "testnet")});
+        return await this.makeRPCRequest("getBalance", {testnet: (this.State.network === "testnet")});
     }
 
     async getAddress(){
-        return this.address;
+        return this.State.address;
     }
 
     async importAccount():Promise<boolean>{
@@ -132,12 +147,12 @@ export class MetamaskWallet{
     }
 
     async getAssets(){
-        if(this.connected && this.dataPacket){
-            if(this.network === "testnet"){
-                return this.dataPacket.testnetAssets;
+        if(this.State.connected && this.State.dataPacket){
+            if(this.State.network === "testnet"){
+                return this.State.dataPacket.testnetAssets;
             }
-            if(this.network === "mainnet"){
-                return this.dataPacket.mainnetAssets;
+            if(this.State.network === "mainnet"){
+                return this.State.dataPacket.mainnetAssets;
             }
         }
         else{
@@ -158,5 +173,16 @@ export class MetamaskWallet{
 
     async showAddress(){
         return await this.makeRPCRequest("showAddress", {});
+    }
+
+
+    exportState():WalletState{
+        return this.State;
+    }
+
+    static importState(state:WalletState):MetamaskWallet{
+        let wallet = new MetamaskWallet(state.snapId, state.network);
+        wallet.State = state;
+        return wallet;
     }
 }
